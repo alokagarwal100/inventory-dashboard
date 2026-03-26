@@ -781,8 +781,35 @@
             reader.readAsArrayBuffer(file);
         }
 
+        function normalizeRow(row) {
+            // Map common column name variants to the expected field names
+            const keyMap = {
+                'sku': 'sku', 'SKU': 'sku',
+                'item_name': 'item_name', 'Item Name': 'item_name', 'Item_Name': 'item_name', 'item name': 'item_name',
+                'location_name': 'location_name', 'Warehouse': 'location_name', 'Location Name': 'location_name', 'warehouse': 'location_name',
+                'quantity_available': 'quantity_available', 'Available': 'quantity_available', 'Quantity Available': 'quantity_available', 'available': 'quantity_available',
+                'quantity_sold': 'quantity_sold', 'Sold': 'quantity_sold', 'Quantity Sold': 'quantity_sold',
+                'quantity_demanded': 'quantity_demanded', 'Demanded': 'quantity_demanded',
+                'quantity_in_transit': 'quantity_in_transit', 'In Transit': 'quantity_in_transit',
+                'quantity_available_for_sale': 'quantity_available_for_sale', 'Available for Sale': 'quantity_available_for_sale',
+            };
+            const normalized = {};
+            for (const [key, value] of Object.entries(row)) {
+                const mappedKey = keyMap[key.trim()] || key.trim().toLowerCase().replace(/\s+/g, '_');
+                normalized[mappedKey] = value;
+            }
+            // Ensure quantity_available is a number
+            if (normalized.quantity_available !== undefined) {
+                normalized.quantity_available = parseFloat(normalized.quantity_available) || 0;
+            }
+            if (normalized.quantity_sold !== undefined) {
+                normalized.quantity_sold = parseFloat(normalized.quantity_sold) || 0;
+            }
+            return normalized;
+        }
+
         function loadData(data) {
-            allData = data;
+            allData = data.map(normalizeRow);
             processData();
             applyFilters();
             updateKPIs();
