@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Dashboard - SportsInfra.Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --red: #F05148;
+            --red-dark: #D9443C;
+            --black: #000000;
+            --lime: #DDE67A;
+            --teal: #1E7194;
+            --yellow: #FDD175;
+            --gray: #333333;
+            --bg: #FAFAFA;
+            --white: #FFFFFF;
+            --border-radius: 14px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg);
+            color: var(--gray);
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        .header {
+            background-color: var(--black);
+            color: var(--white);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-dot {
+            color: var(--lime);
+            font-weight: 800;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .btn-upload {
+            background-color: var(--red);
+            color: var(--white);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn-upload:hover {
+            background-color: var(--red-dark);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* KPI Cards Row */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .kpi-card {
+            background-color: var(--white);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid;
+        }
+
+        .kpi-card.red {
+            border-left-color: var(--red);
+        }
+
+        .kpi-card.lime {
+            border-left-color: var(--lime);
+        }
+
+        .kpi-card.black {
+            border-left-color: var(--black);
+        }
+
+        .kpi-card.teal {
+            border-left-color: var(--teal);
+        }
+
+        .kpi-label {
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--black);
+        }
+
+        .kpi-subtext {
+            font-size: 12px;
+            opacity: 0.6;
+            margin-top: 8px;
+        }
+
+        /* Charts Row */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .chart-card {
+            background-color: var(--white);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--red);
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        canvas {
+            max-height: 300px;
+        }
+
+        /* Filters and Controls */
+        .controls-section {
+            background-color: var(--white);
+            padding: 20px 24px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .filter-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--red);
+            text-transform: uppercase;
+        }
+
+        select, input[type="text"] {
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px rgba(240, 81, 72, 0.1);
+        }
+
+        /* Low Stock Alerts */
+        .alerts-section {
+            background-color: var(--white);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--red);
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+        }
+
+        .alert-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .alert-item:last-child {
+            border-bottom: none;
+        }
+
+        .alert-sku {
+            font-weight: 600;
+            color: var(--red);
+        }
+
+        .alert-status {
+            background-color: #ffe0e0;
+            color: var(--red);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Table Section */
+        .table-section {
+            background-color: var(--white);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead {
+            background-color: var(--black);
+            color: var(--white);
+        }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        th:hover {
+            background-color: #1a1a1a;
+        }
+
+        th::after {
+            content: '';
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
+        th.sorted-asc::after {
+            content: '▲';
+        }
+
+        th.sorted-desc::after {
+            content: '▼';
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: rgba(221, 230, 122, 0.15);
+        }
+
+        tbody tr:hover {
+            background-color: rgba(221, 230, 122, 0.3);
+        }
+
+        .sku-cell {
+            color: var(--red);
+            font-weight: 700;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-in-stock {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-out-of-stock {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .pagination button, .pagination span {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background-color: var(--white);
+            color: var(--gray);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background-color: var(--red);
+            color: var(--white);
+            border-color: var(--red);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination .active {
+            background-color: var(--red);
+            color: var(--white);
+            border-color: var(--red);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: #999;
+            font-size: 13px;
+            margin-top: 40px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .header-left {
+                flex-direction: column;
+                width: 100%;
+                text-align: center;
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .kpi-row {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">
+                sportsinfra<span class="logo-dot">.</span>store
+            </div>
+            <div class="header-title">Inventory Dashboard</div>
+        </div>
+        <div class="header-right">
+            <div class="header-date" id="headerDate"></div>
+            <button class="btn-upload" onclick="triggerFileUpload()">Upload New Data</button>
+            <input type="file" id="fileInput" accept=".xlsx,.csv" onchange="handleFileUpload(event)">
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- KPI Cards -->
+        <div class="kpi-row">
+            <div class="kpi-card red">
+                <div class="kpi-label">Total SKUs</div>
+                <div class="kpi-value" id="kpiTotalSkus">0</div>
+            </div>
+            <div class="kpi-card lime">
+                <div class="kpi-label">Total Stock</div>
+                <div class="kpi-value" id="kpiTotalStock">0</div>
+                <div class="kpi-subtext">sqft / kg available</div>
+            </div>
+            <div class="kpi-card black">
+                <div class="kpi-label">Items In Stock</div>
+                <div class="kpi-value" id="kpiInStock">0</div>
+            </div>
+            <div class="kpi-card teal">
+                <div class="kpi-label">Items Out of Stock</div>
+                <div class="kpi-value" id="kpiOutOfStock">0</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-title">Stock by Warehouse</div>
+                <canvas id="warehouseChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Top 10 Items by Stock</div>
+                <canvas id="topItemsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Controls & Filters -->
+        <div class="controls-section">
+            <div class="filter-group">
+                <label class="filter-label">Category:</label>
+                <select id="categoryFilter" onchange="applyFilters()">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Search:</label>
+                <input type="text" id="searchInput" placeholder="SKU or Item Name" onkeyup="applyFilters()">
+            </div>
+        </div>
+
+        <!-- Low Stock Alerts -->
+        <div class="alerts-section" id="alertsSection" style="display: none;">
+            <div class="section-title">Low Stock Alerts</div>
+            <div id="alertsContainer"></div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-section">
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('category')">Category</th>
+                        <th onclick="sortTable('product')">Product Name</th>
+                        <th onclick="sortTable('sku')">SKU</th>
+                        <th onclick="sortTable('item_name')">Item Name</th>
+                        <th onclick="sortTable('warehouse')">Warehouse</th>
+                        <th onclick="sortTable('qty')">Qty (MOQ)</th>
+                        <th onclick="sortTable('sqft_kg')">Sqft/Kg Available</th>
+                        <th onclick="sortTable('status')">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+            <div class="pagination" id="pagination"></div>
+            <div class="no-data" id="noData" style="display: none;">No data found</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        Powered by SportsInfra.Store — Your Sports Supply Partner
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // SKU Reference Data
+        const SKU_REF = {
+            "PU-BSG-Binder154-60": { category: "PU", product: "BSG Binder T154", packSize: 60, uom: "kg/bucket" },
+            "PU-BSG-Glue-100A-21": { category: "PU", product: "BSG Adhesive T100", packSize: 21, uom: "kg/bucket" },
+            "PU-BSG-Glue-100B-3": { category: "PU", product: "BSG Adhesive T100", packSize: 3, uom: "kg/bucket" },
+            "PU-ZID-Glue-20.6A": { category: "PU", product: "ZIDA Turf Glue", packSize: 20.6, uom: "kg/bucket" },
+            "PU-ZID-Glue-20.4A": { category: "PU", product: "ZIDA Turf Glue", packSize: 20.4, uom: "kg/bucket" },
+            "PU-ZID-Glue-2.6B": { category: "PU", product: "ZIDA Turf Glue", packSize: 2.6, uom: "kg/bucket" },
+            "PU-ZID-Glue-2.4B": { category: "PU", product: "ZIDA Turf Glue", packSize: 2.4, uom: "kg/bucket" },
+            "AM-ZIDA-Resurfacer-25": { category: "Acrylic", product: "ZIDA Acrylic", packSize: 25, uom: "kg/bucket" },
+            "AM-ZIDA-Cushion-50": { category: "Acrylic", product: "ZIDA Acrylic", packSize: 50, uom: "kg/bucket" },
+            "AM-ZIDA-Rally-WL-1": { category: "Acrylic", product: "ZIDA Acrylic", packSize: 1, uom: "kg/bucket" },
+            "AM-ZID-P-CLR-CGreen": { category: "Acrylic", product: "ZIDA Acrylic", packSize: 25, uom: "kg/bucket" },
+            "AM-ZIDA-CLR-DG-25": { category: "Acrylic", product: "ZIDA Acrylic", packSize: 25, uom: "kg/bucket" },
+            "AM-ZID-P-CLR-MCBlue": { category: "Acrylic", product: "ZIDA Acrylic", packSize: 25, uom: "kg/bucket" },
+            "AM-ZID-P-CLR-PGrey": { category: "Acrylic", product: "ZIDA Acrylic", packSize: 25, uom: "kg/bucket" },
+            "AM-ZID-P-CLR-SCBlue": { category: "Acrylic", product: "ZIDA Acrylic", packSize: 25, uom: "kg/bucket" },
+            "AM-ZID-P-Primer-20kg": { category: "Acrylic", product: "ZIDA Acrylic", packSize: 20, uom: "kg/bucket" },
+            "SU-ZID-SIL-80": { category: "Acrylic", product: "ZIDA Acrylic", packSize: 50, uom: "kg/bucket" },
+            "AM-COU-RESIBASE-CO15": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESIBASE-CO17": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESIBASE-CO18": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESIBASE-CO2": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESIBASE-CO23": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESIBASE-CO3": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESIBASE-CO7": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESIBASE-CO9": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESIBASE-BP": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESITOP-CO15": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESITOP-CO17": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESITOP-CO18": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESITOP-CO2": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESITOP-CO23": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESITOP-CO3": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESITOP-CO7": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AM-COU-RESITOP-CO9": { category: "Acrylic", product: "COURTSOL Acrylic", packSize: 20, uom: "kg/bucket" },
+            "AT-LIM-TP50-W-PRC": { category: "Artificial Turf", product: "Limonta", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-LIM-TP50-G-PRC": { category: "Artificial Turf", product: "Limonta", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-LIM-DS50-G-PRC": { category: "Artificial Turf", product: "Limonta", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-LIM-DS50-G-ITY": { category: "Artificial Turf", product: "Limonta", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-LIM-DS60-G-PRC": { category: "Artificial Turf", product: "Limonta", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-LIM-DS60-G-ITY": { category: "Artificial Turf", product: "Limonta", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-ZID-GDE-G-UAE": { category: "Artificial Turf", product: "ZIDA 50mm Turf", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-ZID-MT-G": { category: "Artificial Turf", product: "ZIDA 13mm Multipurpose", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-STD-PP13-G": { category: "Artificial Turf", product: "ZIDA 13mm Multipurpose", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-ZID-MT-B": { category: "Artificial Turf", product: "ZIDA 13mm Multipurpose", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-STD-PP13-B": { category: "Artificial Turf", product: "ZIDA 13mm Multipurpose", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-ZID-MT-B+W": { category: "Artificial Turf", product: "ZIDA Padel Turf Set", packSize: 2285.74, uom: "sqft/set" },
+            "AT-ZID-PAD-B+W": { category: "Artificial Turf", product: "ZIDA Padel Turf Set", packSize: 2285.74, uom: "sqft/set" },
+            "AT-STD-PP13-14.9*2.02NRBWH50": { category: "Artificial Turf", product: "ZIDA Padel Turf Set", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-STD-PP13-20*4-NRBWH50": { category: "Artificial Turf", product: "ZIDA Padel Turf Set", packSize: 1076.4, uom: "sqft/roll" },
+            "AT-STD-PP13-24.6*4.05-NRB": { category: "Artificial Turf", product: "ZIDA Padel Turf Set", packSize: 1076.4, uom: "sqft/roll" },
+            "RP-TER-SBR-Roll1": { category: "SBR", product: "Terrain 4mm Roll", packSize: 107.64, uom: "sqft/roll" },
+            "RP-ZIDA-SBR-CRUMBS": { category: "SBR", product: "ZIDA SBR Granules", packSize: 40, uom: "kg/bag" },
+            "RP-ZIDA-SBR-GRANUELS": { category: "SBR", product: "ZIDA SBR Granules", packSize: 40, uom: "kg/bag" },
+            "WF-CON-MAP": { category: "Wooden Flooring", product: "Connor Maple Top Wood", packSize: 20, uom: "sqft/bundle" },
+            "WF-CON-MT": { category: "Wooden Flooring", product: "Connor Maple Top Wood", packSize: 20, uom: "sqft/bundle" },
+            "SS-ZID-PAD-P": { category: "Padel Court System", product: "ZIDA Padel System", packSize: 1, uom: "unit/system" },
+            "SS-ZID-PAD-SuperP": { category: "Padel Court System", product: "ZIDA Padel System", packSize: 1, uom: "unit/system" },
+            "SS-ZID-PAD-Installation": { category: "Padel Court System", product: "ZIDA Padel System", packSize: 1, uom: "unit/system" },
+            "AT-ZID-ST-100": { category: "Seam Tape", product: "ZIDA Seam Tape", packSize: 100, uom: "RMT/roll" },
+            "SU-ZIDA-ST-100": { category: "Seam Tape", product: "ZIDA Seam Tape", packSize: 100, uom: "RMT/roll" },
+            "AT-ZID-ST-50": { category: "Seam Tape", product: "ZIDA Seam Tape", packSize: 50, uom: "RMT/roll" },
+            "PU-BSG-Sealer-110A-24": { category: "PU", product: "BSG Sealer", packSize: 24, uom: "kg/bucket" },
+            "PU-BSG-Sealer-110B-6": { category: "PU", product: "BSG Sealer", packSize: 6, uom: "kg/bucket" }
+        };
+
+        // Clubbing Rules
+        const CLUBBING_RULES = [
+            {
+                displayName: "BSG PU Glue Tetrapur 100 (Kit A+B)",
+                displaySku: "PU-BSG-GLUE-KIT",
+                skus: ["PU-BSG-Glue-100A-21", "PU-BSG-Glue-100B-3"],
+                category: "PU",
+                packSize: 24,
+                uom: "kg/kit"
+            },
+            {
+                displayName: "BSG PU Sealer Tetrapur 110 (Kit A+B)",
+                displaySku: "PU-BSG-SEALER-KIT",
+                skus: ["PU-BSG-Sealer-110A-24", "PU-BSG-Sealer-110B-6"],
+                category: "PU",
+                packSize: 30,
+                uom: "kg/kit"
+            },
+            {
+                displayName: "ZIDA Blue Padel Turf Set (with Line Marking)",
+                displaySku: "AT-ZID-PADEL-SET",
+                skus: ["AT-ZID-PAD-B+W", "AT-STD-PP13-14.9*2.02NRBWH50", "AT-STD-PP13-20*4-NRBWH50", "AT-STD-PP13-24.6*4.05-NRB"],
+                category: "Artificial Turf",
+                packSize: 2285.74,
+                uom: "sqft/set"
+            },
+            {
+                displayName: "ZIDA Turf Glue (Kit A+B)",
+                displaySku: "PU-ZID-GLUE-KIT",
+                skus: ["PU-ZID-Glue-20.4A", "PU-ZID-Glue-2.6B", "PU-ZID-Glue-20.6A", "PU-ZID-Glue-2.4B"],
+                category: "PU",
+                packSize: 23,
+                uom: "kg/kit"
+            }
+        ];
+
+        // Sample Data
+        const SAMPLE_DATA = [
+            {sku:"PU-BSG-Binder154-60",item_name:"BSG PU Binder Tetrapur 154 60kg",location_name:"Mumbai Warehouse",quantity_available:227,quantity_sold:169},
+            {sku:"PU-BSG-Glue-100A-21",item_name:"BSG PU Glue Tetrapur 100 Comp A-21",location_name:"HQ Bengaluru Warehouse",quantity_available:42,quantity_sold:366},
+            {sku:"PU-BSG-Glue-100A-21",item_name:"BSG PU Glue Tetrapur 100 Comp A-21",location_name:"Mumbai Warehouse",quantity_available:1,quantity_sold:1024},
+            {sku:"PU-BSG-Glue-100B-3",item_name:"BSG PU Glue Tetrapur 100 Comp B-3",location_name:"HQ Bengaluru Warehouse",quantity_available:42,quantity_sold:366},
+            {sku:"PU-BSG-Glue-100B-3",item_name:"BSG PU Glue Tetrapur 100 Comp B-3",location_name:"Mumbai Warehouse",quantity_available:1,quantity_sold:1024},
+            {sku:"PU-ZID-Glue-20.4A",item_name:"ZIDA Turf Glue Comp A- 20.4",location_name:"HQ Bengaluru Warehouse",quantity_available:119,quantity_sold:66},
+            {sku:"PU-ZID-Glue-20.4A",item_name:"ZIDA Turf Glue Comp A- 20.4",location_name:"Mumbai Warehouse",quantity_available:175,quantity_sold:0},
+            {sku:"PU-ZID-Glue-2.6B",item_name:"ZIDA Turf Glue Comp B- 2.6",location_name:"HQ Bengaluru Warehouse",quantity_available:119,quantity_sold:66},
+            {sku:"PU-ZID-Glue-2.6B",item_name:"ZIDA Turf Glue Comp B- 2.6",location_name:"Mumbai Warehouse",quantity_available:175,quantity_sold:0},
+            {sku:"AM-ZIDA-Resurfacer-25",item_name:"ZIDA Rally Acrylic Resurfacer - 25kg",location_name:"HQ Bengaluru Warehouse",quantity_available:24,quantity_sold:25},
+            {sku:"AM-ZIDA-Cushion-50",item_name:"ZIDA Rally Acrylic Cushion - 50kg",location_name:"HQ Bengaluru Warehouse",quantity_available:15,quantity_sold:23},
+            {sku:"AM-ZID-P-Primer-20kg",item_name:"ZIDA Rally Acrylic Primer - 20Kg",location_name:"HQ Bengaluru Warehouse",quantity_available:1,quantity_sold:1},
+            {sku:"AM-ZID-P-CLR-CGreen",item_name:"ZIDA Rally Acrylic Colour Championship Green - 25kg",location_name:"HQ Bengaluru Warehouse",quantity_available:1,quantity_sold:4},
+            {sku:"AM-ZIDA-CLR-DG-25",item_name:"ZIDA Rally Acrylic Colour Dark Grey - 25kg",location_name:"HQ Bengaluru Warehouse",quantity_available:2,quantity_sold:14},
+            {sku:"AM-ZID-P-CLR-MCBlue",item_name:"ZIDA Rally Acrylic Colour Midnight Court Blue - 25kg",location_name:"HQ Bengaluru Warehouse",quantity_available:4,quantity_sold:2},
+            {sku:"AM-ZID-P-CLR-PGrey",item_name:"ZIDA Rally Acrylic Colour Premium Grey - 25kg",location_name:"HQ Bengaluru Warehouse",quantity_available:5,quantity_sold:0},
+            {sku:"AM-ZID-P-CLR-SCBlue",item_name:"ZIDA Rally Acrylic Colour Sky Court Blue - 25kg",location_name:"HQ Bengaluru Warehouse",quantity_available:3,quantity_sold:0},
+            {sku:"SU-ZID-SIL-80",item_name:"ZIDA Rally SILICA -80 : 50kg",location_name:"HQ Bengaluru Warehouse",quantity_available:50,quantity_sold:10},
+            {sku:"AM-COU-RESIBASE-BP",item_name:"COURTSOL ACRYLIC RESIBASE BP",location_name:"HQ Bengaluru Warehouse",quantity_available:5,quantity_sold:433},
+            {sku:"AM-COU-RESIBASE-CO15",item_name:"COURTSOL ACRYLIC RESIBASE CO15 DARK RED",location_name:"HQ Bengaluru Warehouse",quantity_available:24,quantity_sold:15},
+            {sku:"AM-COU-RESIBASE-CO17",item_name:"COURTSOL ACRYLIC RESIBASE CO17 GREY",location_name:"HQ Bengaluru Warehouse",quantity_available:17,quantity_sold:4},
+            {sku:"AM-COU-RESIBASE-CO18",item_name:"COURTSOL ACRYLIC RESIBASE CO18 DARK GREY",location_name:"HQ Bengaluru Warehouse",quantity_available:26,quantity_sold:12},
+            {sku:"AM-COU-RESIBASE-CO2",item_name:"COURTSOL ACRYLIC RESIBASE CO2 LIGHT GREEN",location_name:"HQ Bengaluru Warehouse",quantity_available:3,quantity_sold:19},
+            {sku:"AM-COU-RESIBASE-CO3",item_name:"COURTSOL ACRYLIC RESIBASE CO3 DARK GREEN",location_name:"HQ Bengaluru Warehouse",quantity_available:42,quantity_sold:5},
+            {sku:"AM-COU-RESIBASE-CO7",item_name:"COURTSOL ACRYLIC RESIBASE CO7 LIGHT BLUE",location_name:"HQ Bengaluru Warehouse",quantity_available:43,quantity_sold:0},
+            {sku:"AM-COU-RESIBASE-CO9",item_name:"COURTSOL ACRYLIC RESIBASE CO9 DARK BLUE",location_name:"HQ Bengaluru Warehouse",quantity_available:2,quantity_sold:20},
+            {sku:"AM-COU-RESITOP-CO15",item_name:"COURTSOL ACRYLIC RESITOP CO15 DARK RED",location_name:"HQ Bengaluru Warehouse",quantity_available:24,quantity_sold:15},
+            {sku:"AM-COU-RESITOP-CO17",item_name:"COURTSOL ACRYLIC RESITOP CO17 GREY",location_name:"HQ Bengaluru Warehouse",quantity_available:17,quantity_sold:4},
+            {sku:"AM-COU-RESITOP-CO18",item_name:"COURTSOL ACRYLIC RESITOP CO18 DARK GREY",location_name:"HQ Bengaluru Warehouse",quantity_available:26,quantity_sold:12},
+            {sku:"AM-COU-RESITOP-CO2",item_name:"COURTSOL ACRYLIC RESITOP CO2 LIGHT GREEN",location_name:"HQ Bengaluru Warehouse",quantity_available:3,quantity_sold:19},
+            {sku:"AM-COU-RESITOP-CO3",item_name:"COURTSOL ACRYLIC RESITOP CO3 DARK GREEN",location_name:"HQ Bengaluru Warehouse",quantity_available:42,quantity_sold:5},
+            {sku:"AM-COU-RESITOP-CO7",item_name:"COURTSOL ACRYLIC RESITOP CO7 LIGHT BLUE",location_name:"HQ Bengaluru Warehouse",quantity_available:43,quantity_sold:0},
+            {sku:"AM-COU-RESITOP-CO9",item_name:"COURTSOL ACRYLIC RESITOP CO9 DARK BLUE",location_name:"HQ Bengaluru Warehouse",quantity_available:2,quantity_sold:20},
+            {sku:"AT-LIM-TP50-W-PRC",item_name:"Artificial Turf (Non FIFA Certified) - Top Plus 50 (Limonta Sport) - White",location_name:"HQ Bengaluru Warehouse",quantity_available:10.5,quantity_sold:0.5},
+            {sku:"AT-LIM-TP50-G-PRC",item_name:"Artificial Turf Limonta Sports Top Plus 50 - Green",location_name:"HQ Bengaluru Warehouse",quantity_available:15,quantity_sold:79},
+            {sku:"AT-STD-PP13-B",item_name:"Artificial Turf ZIDA Multipurpose Turf 13MM- Blue",location_name:"HQ Bengaluru Warehouse",quantity_available:11,quantity_sold:0},
+            {sku:"AT-STD-PP13-G",item_name:"Artificial Turf ZIDA Multipurpose Turf 13MM-DGN-MN- Green",location_name:"HQ Bengaluru Warehouse",quantity_available:1,quantity_sold:29},
+            {sku:"AT-ZID-PAD-B+W",item_name:"ZIDA BLUE PADEL TURF WITH LINE MARKING",location_name:"HQ Bengaluru Warehouse",quantity_available:9,quantity_sold:1},
+            {sku:"AT-STD-PP13-14.9*2.02NRBWH50",item_name:"ZIDA Padel-1 13MM- NRB+WH50- 14.9*2.02",location_name:"HQ Bengaluru Warehouse",quantity_available:10,quantity_sold:0},
+            {sku:"AT-STD-PP13-14.9*2.02NRBWH50",item_name:"ZIDA Padel-1 13MM- NRB+WH50- 14.9*2.02",location_name:"Mumbai Warehouse",quantity_available:6,quantity_sold:10},
+            {sku:"AT-STD-PP13-20*4-NRBWH50",item_name:"Zida Padel-2 13MM- NRB+WH50- 20.4*4.05",location_name:"HQ Bengaluru Warehouse",quantity_available:10,quantity_sold:0},
+            {sku:"AT-STD-PP13-20*4-NRBWH50",item_name:"Zida Padel-2 13MM- NRB+WH50- 20.4*4.05",location_name:"Mumbai Warehouse",quantity_available:6,quantity_sold:10},
+            {sku:"AT-STD-PP13-24.6*4.05-NRB",item_name:"Zida Padel-3 13MM- NRB- 24.6*4.05",location_name:"HQ Bengaluru Warehouse",quantity_available:10,quantity_sold:0},
+            {sku:"AT-STD-PP13-24.6*4.05-NRB",item_name:"Zida Padel-3 13MM- NRB- 24.6*4.05",location_name:"Mumbai Warehouse",quantity_available:6,quantity_sold:10},
+            {sku:"RP-TER-SBR-Roll1",item_name:"Terrain SBR Roll (1m*10m)",location_name:"HQ Bengaluru Warehouse",quantity_available:12,quantity_sold:54},
+            {sku:"RP-ZIDA-SBR-CRUMBS",item_name:"ZIDA SBR Crumbs (0.8mm-2mm) - 8 Mesh",location_name:"HQ Bengaluru Warehouse",quantity_available:308,quantity_sold:111},
+            {sku:"RP-ZIDA-SBR-GRANUELS",item_name:"ZIDA SBR Granuels (1mm-4mm) - 5 Mesh",location_name:"HQ Bengaluru Warehouse",quantity_available:78,quantity_sold:960},
+            {sku:"WF-CON-MAP",item_name:"Connor Maple flooring - GAMUT- Topwood 84*38*34",location_name:"HQ Bengaluru Warehouse",quantity_available:40,quantity_sold:0},
+            {sku:"WF-CON-MAP",item_name:"Connor Maple flooring - GAMUT- Topwood 84*38*34",location_name:"Mumbai Warehouse",quantity_available:800,quantity_sold:11440},
+            {sku:"SU-ZIDA-ST-100",item_name:"ZIDA Turf Seam Tape-30cm*100mt",location_name:"HQ Bengaluru Warehouse",quantity_available:50,quantity_sold:0}
+        ];
+
+        // Global state
+        let allData = [];
+        let processedData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        const itemsPerPage = 25;
+        let sortColumn = null;
+        let sortDirection = 'asc';
+        let charts = {};
+
+        // Google Sheet published CSV URL
+        const LIVE_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTDOakJv4M66hneh2vqLQfv5AbZ0_QXgXHHOT47ABdBMEG23gk2lNKXXtjnTCPtfkTbhyDXLiuxN_sB/pub?gid=2103888374&single=true&output=csv';
+
+        // Initialize — fetch live data first, fall back to sample data
+        document.addEventListener('DOMContentLoaded', function() {
+            setHeaderDate();
+            fetchLiveData();
+        });
+
+        function fetchLiveData() {
+            fetch(LIVE_CSV_URL)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network error');
+                    return response.text();
+                })
+                .then(csvText => {
+                    const workbook = XLSX.read(csvText, { type: 'string' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(sheet);
+                    if (jsonData.length > 0) {
+                        loadData(jsonData);
+                        document.getElementById('headerDate').textContent += ' (Live from Google Sheet)';
+                    } else {
+                        loadData(SAMPLE_DATA);
+                        document.getElementById('headerDate').textContent += ' (Sample Data)';
+                    }
+                })
+                .catch(err => {
+                    console.warn('Could not fetch live data, using sample:', err);
+                    loadData(SAMPLE_DATA);
+                    document.getElementById('headerDate').textContent += ' (Offline — Sample Data)';
+                });
+        }
+
+        function setHeaderDate() {
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            document.getElementById('headerDate').textContent = dateStr;
+        }
+
+        function triggerFileUpload() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+                    loadData(jsonData);
+                    alert('Data loaded successfully!');
+                } catch (error) {
+                    alert('Error loading file: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function loadData(data) {
+            allData = data;
+            processData();
+            applyFilters();
+            updateKPIs();
+            updateCharts();
+            populateCategoryFilter();
+        }
+
+        function processData() {
+            processedData = [];
+            const clubbedSkuSets = new Set();
+
+            CLUBBING_RULES.forEach(rule => {
+                rule.skus.forEach(sku => {
+                    clubbedSkuSets.add(sku);
+                });
+            });
+
+            allData.forEach(row => {
+                if (!clubbedSkuSets.has(row.sku)) {
+                    const skuInfo = SKU_REF[row.sku] || { category: 'Other', product: 'Unknown' };
+                    processedData.push({
+                        sku: row.sku,
+                        item_name: row.item_name,
+                        warehouse: row.location_name,
+                        qty: row.quantity_available,
+                        category: skuInfo.category,
+                        product: skuInfo.product,
+                        packSize: skuInfo.packSize || 1,
+                        uom: skuInfo.uom || 'unit',
+                        sqft_kg: (row.quantity_available * (skuInfo.packSize || 1)).toFixed(2),
+                        status: row.quantity_available > 0 ? 'In Stock' : 'Out of Stock'
+                    });
+                }
+            });
+
+            CLUBBING_RULES.forEach(rule => {
+                const warehouseData = {};
+
+                rule.skus.forEach(sku => {
+                    const rows = allData.filter(r => r.sku === sku);
+                    rows.forEach(row => {
+                        if (!warehouseData[row.location_name]) {
+                            warehouseData[row.location_name] = [];
+                        }
+                        warehouseData[row.location_name].push(row.quantity_available);
+                    });
+                });
+
+                Object.entries(warehouseData).forEach(([warehouse, quantities]) => {
+                    const minQty = Math.min(...quantities);
+                    processedData.push({
+                        sku: rule.displaySku,
+                        item_name: rule.displayName,
+                        warehouse: warehouse,
+                        qty: minQty,
+                        category: rule.category,
+                        product: rule.displayName,
+                        packSize: rule.packSize,
+                        uom: rule.uom,
+                        sqft_kg: (minQty * rule.packSize).toFixed(2),
+                        status: minQty > 0 ? 'In Stock' : 'Out of Stock'
+                    });
+                });
+            });
+        }
+
+        function populateCategoryFilter() {
+            const categories = [...new Set(processedData.map(item => item.category))].sort();
+            const select = document.getElementById('categoryFilter');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">All Categories</option>';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                select.appendChild(option);
+            });
+            select.value = currentValue;
+        }
+
+        function applyFilters() {
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredData = processedData.filter(item => {
+                const categoryMatch = !categoryFilter || item.category === categoryFilter;
+                const searchMatch = !searchText ||
+                                   item.sku.toLowerCase().includes(searchText) ||
+                                   item.item_name.toLowerCase().includes(searchText);
+                return categoryMatch && searchMatch;
+            });
+
+            currentPage = 1;
+            renderTable();
+            updateLowStockAlerts();
+        }
+
+        function sortTable(column) {
+            const thElements = document.querySelectorAll('th');
+            thElements.forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+
+            filteredData.sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+
+                if (typeof aVal === 'string') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                } else if (typeof aVal === 'number') {
+                    aVal = parseFloat(aVal);
+                    bVal = parseFloat(bVal);
+                }
+
+                if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            const thIndex = Array.from(thElements).findIndex(th => th.textContent.toLowerCase().includes(column.replace(/_/g, ' ')));
+            if (thIndex >= 0) {
+                thElements[thIndex].classList.add(sortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            }
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const noData = document.getElementById('noData');
+            const paginationDiv = document.getElementById('pagination');
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '';
+                noData.style.display = 'block';
+                paginationDiv.innerHTML = '';
+                return;
+            }
+
+            noData.style.display = 'none';
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageData = filteredData.slice(start, end);
+
+            tbody.innerHTML = pageData.map(item => `
+                <tr>
+                    <td>${item.category}</td>
+                    <td>${item.product}</td>
+                    <td class="sku-cell">${item.sku}</td>
+                    <td>${item.item_name}</td>
+                    <td>${item.warehouse}</td>
+                    <td>${item.qty}</td>
+                    <td>${item.sqft_kg} ${item.uom.split('/')[1] || 'unit'}</td>
+                    <td><span class="status-badge ${item.status === 'In Stock' ? 'status-in-stock' : 'status-out-of-stock'}">${item.status}</span></td>
+                </tr>
+            `).join('');
+
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            let paginationHTML = '';
+
+            if (currentPage > 1) {
+                paginationHTML += `<button onclick="goToPage(1)">First</button>`;
+                paginationHTML += `<button onclick="goToPage(${currentPage - 1})">Prev</button>`;
+            }
+
+            for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+                if (i === currentPage) {
+                    paginationHTML += `<span class="active">${i}</span>`;
+                } else {
+                    paginationHTML += `<button onclick="goToPage(${i})">${i}</button>`;
+                }
+            }
+
+            if (currentPage < totalPages) {
+                paginationHTML += `<button onclick="goToPage(${currentPage + 1})">Next</button>`;
+                paginationHTML += `<button onclick="goToPage(${totalPages})">Last</button>`;
+            }
+
+            paginationDiv.innerHTML = paginationHTML;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderTable();
+            document.querySelector('.table-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function updateKPIs() {
+            const uniqueSkus = new Set(processedData.map(item => item.sku)).size;
+            const totalStock = processedData.reduce((sum, item) => sum + parseFloat(item.sqft_kg), 0).toFixed(2);
+            const inStockCount = processedData.filter(item => item.status === 'In Stock').length;
+            const outOfStockCount = processedData.filter(item => item.status === 'Out of Stock').length;
+
+            document.getElementById('kpiTotalSkus').textContent = uniqueSkus;
+            document.getElementById('kpiTotalStock').textContent = totalStock.toLocaleString();
+            document.getElementById('kpiInStock').textContent = inStockCount;
+            document.getElementById('kpiOutOfStock').textContent = outOfStockCount;
+        }
+
+        function updateCharts() {
+            updateWarehouseChart();
+            updateTopItemsChart();
+        }
+
+        function updateWarehouseChart() {
+            const warehouseData = {};
+            processedData.forEach(item => {
+                if (!warehouseData[item.warehouse]) {
+                    warehouseData[item.warehouse] = 0;
+                }
+                warehouseData[item.warehouse] += parseFloat(item.sqft_kg);
+            });
+
+            const ctx = document.getElementById('warehouseChart').getContext('2d');
+            if (charts.warehouse) charts.warehouse.destroy();
+
+            const warehouses = Object.keys(warehouseData);
+            const colors = ['#F05148', '#1E7194', '#DDE67A', '#FDD175', '#000000'];
+
+            charts.warehouse = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: warehouses,
+                    datasets: [{
+                        data: Object.values(warehouseData),
+                        backgroundColor: colors.slice(0, warehouses.length)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTopItemsChart() {
+            const itemData = {};
+            processedData.forEach(item => {
+                const key = item.product;
+                if (!itemData[key]) {
+                    itemData[key] = 0;
+                }
+                itemData[key] += parseFloat(item.sqft_kg);
+            });
+
+            const sorted = Object.entries(itemData)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            const ctx = document.getElementById('topItemsChart').getContext('2d');
+            if (charts.topItems) charts.topItems.destroy();
+
+            charts.topItems = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(([name]) => name.substring(0, 30)),
+                    datasets: [{
+                        label: 'Stock (sqft/kg)',
+                        data: sorted.map(([, qty]) => qty),
+                        backgroundColor: '#F05148',
+                        borderColor: '#D9443C',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateLowStockAlerts() {
+            const lowStockItems = filteredData.filter(item => item.qty > 0 && item.qty <= 5);
+            const alertsSection = document.getElementById('alertsSection');
+            const alertsContainer = document.getElementById('alertsContainer');
+
+            if (lowStockItems.length === 0) {
+                alertsSection.style.display = 'none';
+                return;
+            }
+
+            alertsSection.style.display = 'block';
+            alertsContainer.innerHTML = lowStockItems.map(item => `
+                <div class="alert-item">
+                    <div>
+                        <span class="alert-sku">${item.sku}</span> - ${item.product}
+                        <br><small>${item.warehouse}</small>
+                    </div>
+                    <span class="alert-status">Only ${item.qty} units</span>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
